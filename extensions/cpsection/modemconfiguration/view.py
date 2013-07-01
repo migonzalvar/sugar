@@ -25,7 +25,16 @@ from sugar3.graphics import style
 from jarabe.controlpanel.sectionview import SectionView
 
 
+from .model import ServiceProviderDatabaseError
+
 APPLY_TIMEOUT = 1000
+
+
+def list_filler(gtk_list, iterable, unpacker=lambda x: (x.name, x)):
+    gtk_list.clear()
+    for i in iterable:
+        gtk_list.append(unpacker(i))
+    return gtk_list
 
 
 class EntryWithLabel(Gtk.HBox):
@@ -74,6 +83,66 @@ class ModemConfiguration(SectionView):
         self.pack_start(self._text, False, False, 0)
         self._text.show()
 
+        main_box = Gtk.VBox()
+        self.add(main_box)
+        main_box.show()
+
+        country_store = Gtk.ListStore(str, object)
+        country_store.append([])
+
+        provider_store = Gtk.ListStore(str, object)
+        provider_store.append([])
+
+        plan_store = Gtk.ListStore(str)
+        plan_store.append([])
+
+        self._label_group = Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL)
+        self._combo_group = Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL)
+
+        box, self.country_combo = self._make_combo_with_label(country_store,
+                                                              _('Country:'))
+        main_box.pack_start(box, False, False, 0)
+        box.show()
+
+        box, self.provider_combo = self._make_combo_with_label(provider_store,
+                                                               _('Provider:'))
+        main_box.pack_start(box, False, False, 0)
+        box.show()
+
+        box, self.plan_combo = self._make_combo_with_label(plan_store,
+                                                           _('Plan:'))
+        main_box.pack_start(box, False, False, 0)
+        box.show()
+
+        separator = Gtk.HSeparator()
+        self.add(separator)
+        separator.show()
+
+        try:
+            self.db_manager = self._model.ServiceProvidersDatabase()
+        except ServiceProviderDatabaseError:
+            self.db_manager = None
+        else:
+            countries = self.db_manager.get_countries()
+            list_filler(country_store, countries)
+            providers = self.db_manager.get_providers()
+            plans = self.db_manager.get_plans()
+            provider_store = list_filler(Gtk.ListStore(str, object), providers)
+            plan_store = list_filler(Gtk.ListStore(str, object), plans)
+            current_country = self.db_manager.get_country()
+            current_provider = self.db_manager.get_provider()
+            current_plan = self.db_manager.get_plan()
+            self.country_combo.set_model(country_store)
+            self.country_combo.set_active(current_country.idx)
+            self.provider_combo.set_model(provider_store)
+            self.provider_combo.set_active(current_provider.idx)
+            self.plan_combo.set_model(plan_store)
+            self.plan_combo.set_active(current_plan.idx)
+
+        self.country_combo.connect("changed", self._country_selected_cb)
+        self.provider_combo.connect("changed", self._provider_selected_cb)
+        self.plan_combo.connect("changed", self._plan_selected_cb)
+
         self._username_entry = EntryWithLabel(_('Username:'))
         self._username_entry.entry.connect('changed', self.__entry_changed_cb)
         self._group.add_widget(self._username_entry.label)
@@ -105,6 +174,28 @@ class ModemConfiguration(SectionView):
         self._pin_entry.show()
 
         self.setup()
+
+    def _make_combo_with_label(self, store, label_text=''):
+        label = Gtk.Label(label_text)
+        label.set_alignment(1, 0.5)
+        self._label_group.add_widget(label)
+
+        combo = Gtk.ComboBox()
+        self._combo_group.add_widget(combo)
+        combo.set_model(store)
+        renderer_text = Gtk.CellRendererText()
+        renderer_text.set_property("max-width-chars", 25)
+        renderer_text.set_property("width-chars", 25)
+        combo.pack_start(renderer_text, True)
+        combo.add_attribute(renderer_text, "text", 0)
+
+        box = Gtk.HBox(spacing=style.DEFAULT_SPACING)
+        box.pack_start(label, True, False, 0)
+        label.show()
+        box.pack_start(combo, True, False, 0)
+        combo.show()
+        return box, combo
+
 
     def undo(self):
         self._model.undo()
@@ -144,3 +235,35 @@ class ModemConfiguration(SectionView):
         settings['apn'] = self._apn_entry.entry.get_text()
         settings['pin'] = self._pin_entry.entry.get_text()
         self._model.set_modem_settings(settings)
+
+    def _country_selected_cb(self, combo):
+        tree_iter = combo.get_active_iter()
+        if tree_iter is not None:
+            model = combo.get_model()
+            country = model[tree_iter][1]
+            self.db_manager.set_country(country.idx)
+            providers = self.db_manager.get_providers()
+            store = list_filler(Gtk.ListStore(str, object), providers)
+            current = self.db_manager.get_provider()
+            self.provider_combo.set_model(store)
+            self.provider_combo.set_active(current.idx)
+
+    def _provider_selected_cb(self, combo):
+        tree_iter = combo.get_active_iter()
+        if tree_iter is not None:
+            model = combo.get_model()
+            provider = model[tree_iter][1]
+            self.db_manager.set_provider(provider.idx)
+            plans = self.db_manager.get_plans()
+            store = list_filler(Gtk.ListStore(str, object), plans)
+            current = self.db_manager.get_plan()
+            self.plan_combo.set_model(store)
+            self.plan_combo.set_active(current.idx)
+
+    def _plan_selected_cb(self, combo):
+        tree_iter = combo.get_active_iter()
+        if tree_iter is not None:
+            model = combo.get_model()
+            plan = model[tree_iter][1]
+            self.db_manager.set_plan(plan.idx)
+            self.db_manager.save()
