@@ -83,8 +83,8 @@ class ModemConfiguration(SectionView):
         self.pack_start(self._text, False, False, 0)
         self._text.show()
 
-        main_box = Gtk.VBox()
-        self.add(main_box)
+        main_box = Gtk.VBox(spacing=style.DEFAULT_SPACING)
+        self.pack_start(main_box, True, False, 0)
         main_box.show()
 
         country_store = Gtk.ListStore(str, object)
@@ -101,17 +101,17 @@ class ModemConfiguration(SectionView):
 
         box, self.country_combo = self._make_combo_with_label(country_store,
                                                               _('Country:'))
-        main_box.pack_start(box, False, False, 0)
+        main_box.pack_start(box, True, False, 0)
         box.show()
 
         box, self.provider_combo = self._make_combo_with_label(provider_store,
                                                                _('Provider:'))
-        main_box.pack_start(box, False, False, 0)
+        main_box.pack_start(box, True, False, 0)
         box.show()
 
         box, self.plan_combo = self._make_combo_with_label(plan_store,
                                                            _('Plan:'))
-        main_box.pack_start(box, False, False, 0)
+        main_box.pack_start(box, True, False, 0)
         box.show()
 
         separator = Gtk.HSeparator()
