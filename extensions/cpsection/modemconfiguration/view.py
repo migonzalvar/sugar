@@ -111,17 +111,17 @@ class ModemConfiguration(SectionView):
 
         box, self.country_combo = self._make_combo_with_label(country_store,
                                                               _('Country:'))
-        upper_box.pack_start(box, True, False, 0)
+        upper_box.pack_start(box, False, True, 0)
         box.show()
 
         box, self.provider_combo = self._make_combo_with_label(provider_store,
                                                                _('Provider:'))
-        upper_box.pack_start(box, True, False, 0)
+        upper_box.pack_start(box, False, True, 0)
         box.show()
 
         box, self.plan_combo = self._make_combo_with_label(plan_store,
                                                            _('Plan:'))
-        upper_box.pack_start(box, True, False, 0)
+        upper_box.pack_start(box, False, True, 0)
         box.show()
 
         separator = Gtk.HSeparator()
