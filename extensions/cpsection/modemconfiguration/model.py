@@ -213,7 +213,9 @@ class ServiceProvidersDatabase(object):
         # Populate countries list
         self._countries, self._current_country = [], 0
         country_codes = []
-        for idx, country in enumerate(self.root.iter('country')):
+        country_els = self.root.findall('country')
+        country_els.sort(key=lambda x: codes[x.attrib['code']])
+        for idx, country in enumerate(country_els):
             country_code = country.attrib['code']
             country = Country(idx, country_code, codes[country_code])
             self._countries.append(country)
