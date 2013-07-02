@@ -72,7 +72,19 @@ class ModemConfiguration(SectionView):
 
         self.set_border_width(style.DEFAULT_SPACING)
         self.set_spacing(style.DEFAULT_SPACING)
-        self._group = Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL)
+
+        self._label_group = Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL)
+        self._combo_group = Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL)
+
+        scrolled_win = Gtk.ScrolledWindow()
+        scrolled_win.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        self.add(scrolled_win)
+        scrolled_win.show()
+
+        main_box = Gtk.VBox(spacing=style.DEFAULT_SPACING)
+        main_box.set_border_width(style.DEFAULT_SPACING)
+        scrolled_win.add_with_viewport(main_box)
+        main_box.show()
 
         explanation = _('You will need to provide the following information'
                         ' to set up a mobile broadband connection to a'
@@ -80,12 +92,13 @@ class ModemConfiguration(SectionView):
         self._text = Gtk.Label(label=explanation)
         self._text.set_line_wrap(True)
         self._text.set_alignment(0, 0)
-        self.pack_start(self._text, False, False, 0)
+        main_box.pack_start(self._text, True, False, 0)
         self._text.show()
 
-        main_box = Gtk.VBox(spacing=style.DEFAULT_SPACING)
-        self.pack_start(main_box, True, False, 0)
-        main_box.show()
+        upper_box = Gtk.VBox(spacing=style.DEFAULT_SPACING)
+        upper_box.set_border_width(style.DEFAULT_SPACING)
+        main_box.pack_start(upper_box, True, False, 0)
+        upper_box.show()
 
         country_store = Gtk.ListStore(str, object)
         country_store.append([])
@@ -96,26 +109,23 @@ class ModemConfiguration(SectionView):
         plan_store = Gtk.ListStore(str)
         plan_store.append([])
 
-        self._label_group = Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL)
-        self._combo_group = Gtk.SizeGroup(Gtk.SizeGroupMode.HORIZONTAL)
-
         box, self.country_combo = self._make_combo_with_label(country_store,
                                                               _('Country:'))
-        main_box.pack_start(box, True, False, 0)
+        upper_box.pack_start(box, True, False, 0)
         box.show()
 
         box, self.provider_combo = self._make_combo_with_label(provider_store,
                                                                _('Provider:'))
-        main_box.pack_start(box, True, False, 0)
+        upper_box.pack_start(box, True, False, 0)
         box.show()
 
         box, self.plan_combo = self._make_combo_with_label(plan_store,
                                                            _('Plan:'))
-        main_box.pack_start(box, True, False, 0)
+        upper_box.pack_start(box, True, False, 0)
         box.show()
 
         separator = Gtk.HSeparator()
-        self.add(separator)
+        main_box.pack_start(separator, True, False, 0)
         separator.show()
 
         try:
@@ -143,34 +153,39 @@ class ModemConfiguration(SectionView):
         self.provider_combo.connect("changed", self._provider_selected_cb)
         self.plan_combo.connect("changed", self._plan_selected_cb)
 
+        lower_box = Gtk.VBox(spacing=style.DEFAULT_SPACING)
+        lower_box.set_border_width(style.DEFAULT_SPACING)
+        main_box.pack_start(lower_box, True, False, 0)
+        lower_box.show()
+
         self._username_entry = EntryWithLabel(_('Username:'))
         self._username_entry.entry.connect('changed', self.__entry_changed_cb)
-        self._group.add_widget(self._username_entry.label)
-        self.pack_start(self._username_entry, False, True, 0)
+        self._label_group.add_widget(self._username_entry.label)
+        lower_box.pack_start(self._username_entry, False, True, 0)
         self._username_entry.show()
 
         self._password_entry = EntryWithLabel(_('Password:'))
         self._password_entry.entry.connect('changed', self.__entry_changed_cb)
-        self._group.add_widget(self._password_entry.label)
-        self.pack_start(self._password_entry, False, True, 0)
+        self._label_group.add_widget(self._password_entry.label)
+        lower_box.pack_start(self._password_entry, False, True, 0)
         self._password_entry.show()
 
         self._number_entry = EntryWithLabel(_('Number:'))
         self._number_entry.entry.connect('changed', self.__entry_changed_cb)
-        self._group.add_widget(self._number_entry.label)
-        self.pack_start(self._number_entry, False, True, 0)
+        self._label_group.add_widget(self._number_entry.label)
+        lower_box.pack_start(self._number_entry, False, True, 0)
         self._number_entry.show()
 
         self._apn_entry = EntryWithLabel(_('Access Point Name (APN):'))
         self._apn_entry.entry.connect('changed', self.__entry_changed_cb)
-        self._group.add_widget(self._apn_entry.label)
-        self.pack_start(self._apn_entry, False, True, 0)
+        self._label_group.add_widget(self._apn_entry.label)
+        lower_box.pack_start(self._apn_entry, False, True, 0)
         self._apn_entry.show()
 
         self._pin_entry = EntryWithLabel(_('Personal Identity Number (PIN):'))
         self._pin_entry.entry.connect('changed', self.__entry_changed_cb)
-        self._group.add_widget(self._pin_entry.label)
-        self.pack_start(self._pin_entry, False, True, 0)
+        self._label_group.add_widget(self._pin_entry.label)
+        lower_box.pack_start(self._pin_entry, False, True, 0)
         self._pin_entry.show()
 
         self.setup()
@@ -186,6 +201,7 @@ class ModemConfiguration(SectionView):
         renderer_text = Gtk.CellRendererText()
         renderer_text.set_property("max-width-chars", 25)
         renderer_text.set_property("width-chars", 25)
+        renderer_text.set_property("xalign", 0.5)
         combo.pack_start(renderer_text, True)
         combo.add_attribute(renderer_text, "text", 0)
 
