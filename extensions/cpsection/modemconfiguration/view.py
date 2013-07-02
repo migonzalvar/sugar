@@ -267,3 +267,8 @@ class ModemConfiguration(SectionView):
             plan = model[tree_iter][1]
             self.db_manager.set_plan(plan.idx)
             self.db_manager.save()
+            plan = self.db_manager.get_plan()
+            self._username_entry.entry.set_text(plan.username)
+            self._password_entry.entry.set_text(plan.password)
+            self._number_entry.entry.set_text(plan.number)
+            self._apn_entry.entry.set_text(plan.apn)
