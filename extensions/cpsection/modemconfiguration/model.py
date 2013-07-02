@@ -211,15 +211,10 @@ class ServiceProvidersDatabase(object):
                 codes[code.lower()] = name.strip()
 
         # Populate countries list
-        self._countries, self._current_country = [], 0
-        country_codes = []
-        country_els = self.root.findall('country')
-        country_els.sort(key=lambda x: codes[x.attrib['code']])
-        for idx, country in enumerate(country_els):
-            country_code = country.attrib['code']
-            country = Country(idx, country_code, codes[country_code])
-            self._countries.append(country)
-            country_codes.append(country_code)
+        self._countries = self.root.findall('country')
+        self._countries.sort(key=lambda x: codes[x.attrib['code']])
+        country_codes = [c_el.attrib['code'] for c_el in self._countries]
+        self._country_names = [codes[code] for code in country_codes]
 
         country_code, provider_name, plan_name = self._get_initials()
         country_idx = country_codes.index(country_code)
@@ -265,7 +260,7 @@ class ServiceProvidersDatabase(object):
         self._current_plan = idx
 
     def _get_country_element(self):
-        return self.root.find('country[%s]' % (self._current_country + 1))
+        return self._countries[self._current_country]
 
     def _update_providers(self):
         self._providers = [
@@ -290,7 +285,12 @@ class ServiceProvidersDatabase(object):
         return self._plans
 
     def get_countries(self):
-        return self._countries
+        countries = []
+        for idx, country_el in enumerate(self._countries):
+            country = Country(idx, country_el.attrib['code'],
+                              self._country_names[idx])
+            countries.append(country)
+        return countries
 
     def get_providers(self):
         providers = []
@@ -307,7 +307,9 @@ class ServiceProvidersDatabase(object):
         return plans
 
     def get_country(self):
-        return self._countries[self._current_country]
+        country_el = self._countries[self._current_country]
+        return Country(self._current_country, country_el.attrib['code'],
+                       self._country_names[self._current_country])
 
     def get_provider(self):
         if self._providers == []:
